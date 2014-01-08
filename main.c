@@ -16,7 +16,8 @@
  */
 
 // Configuration bits
-#pragma config WDTEN = 0, CONFIG5L = 0x0f, CONFIG1H = 0x48, CONFIG2L = 0x00
+#pragma config WDTEN = 0,  CONFIG1H = 0x48, CONFIG2L = 0x00, PBADEN = 0
+//#pragma config CONFIG5L = 0x0f
 
 // define
 #define _XTAL_FREQ  64000000 // 64MHz
@@ -73,6 +74,7 @@ void interrupt myInt(void){
 int main(int argc, char** argv) {
 
     int i;
+    
 
     initSystem();
     initPortReg();
@@ -140,6 +142,7 @@ static void initPortReg(void){
     // Port B : Ext Interrupt
     // Tachometer signal input
     TRISBbits.TRISB0 = 1;   // use external interrupt 0 input
+    ANSELHbits.ANS12 = 0;
 
 
     // Port C : Stepping Motor Control
