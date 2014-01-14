@@ -8,48 +8,21 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <xc.h>
+#include "globalDefine.h"
+#include "motor.h"
 
-
-
-/*
- * 
- */
 
 // Configuration bits
-#pragma config WDTEN = 0,  CONFIG1H = 0x48, CONFIG2L = 0x00, PBADEN = 0
+#pragma config WDTEN = 0,  CONFIG1H = 0x48, CONFIG2L = 0x00, PBADEN = 0, PWRT = ON
 //#pragma config CONFIG5L = 0x0f
-
-// define
-#define _XTAL_FREQ  64000000 // 64MHz
-
-// motor
-#define CW          1
-#define CCW         0
-#define STANDBY     0x00
-#define EX1         0x11
-#define EX2         0x15
-#define EX3         0x14
-#define EX4         0x16
-#define EX5         0x12
-#define EX6         0x1a
-#define EX7         0x18
-#define EX8         0x19
-
 
 
 
 // Function prototype
 static void initSystem(void);
 static void initPortReg(void);
-static void beforeInt(void);    // This Func called after everything is ready.
+static void initInterrupt(void);    // This Func called after everything is ready.
 
-// motor
-static void mtrDriverActive(void);
-static void initMotorPhase(void);
-static void motorChange(char dir, unsigned char phase);
-
-// Global variables
-unsigned char mtrPhase;
 
 
 // Interrupt function
@@ -58,8 +31,8 @@ void interrupt myInt(void){
     if(INTCONbits.INT0IF){
         INTCONbits.INT0IE = 0;
         INTCONbits.INT0IF = 0;  // interrupt flag down
-        INTCONbits.PEIE = 0;
-        INTCONbits.GIE = 0;     // Disable all interrupt
+        //INTCONbits.PEIE = 0;
+        //INTCONbits.GIE = 0;     // Disable all interrupt
 
         // test LED On Off
         PORTAbits.RA0 = ~PORTAbits.RA0;
@@ -69,6 +42,24 @@ void interrupt myInt(void){
         INTCONbits.GIE = 1;     // Enable all interrupt
     }
 }
+
+void interrupt low_priority myIntLP(void){
+
+    if(INTCONbits.INT0IF){
+        INTCONbits.INT0IE = 0;
+        INTCONbits.INT0IF = 0;  // interrupt flag down
+        //INTCONbits.PEIE = 0;
+        //INTCONbits.GIE = 0;     // Disable all interrupt
+
+        // test LED On Off
+        PORTAbits.RA0 = ~PORTAbits.RA0;
+
+        INTCONbits.INT0IE = 1;
+        INTCONbits.PEIE = 1;
+        INTCONbits.GIE = 1;     // Enable all interrupt
+    }
+}
+
 
 
 int main(int argc, char** argv) {
@@ -84,9 +75,13 @@ int main(int argc, char** argv) {
     //mtrDriverActive();
 
     // interrupt test
-    beforeInt();
+    initInterrupt();
     ei();
-    PORTAbits.RA0 = 1;
+    PORTAbits.RA0 = 0;
+    for(i=0; i<100; i++){
+            __delay_ms(10);
+    }
+    PORTAbits.RA0 = ~PORTAbits.RA0;
 
     while(1){
 
@@ -154,7 +149,7 @@ static void initPortReg(void){
     TRISCbits.TRISC4 = 0;   // Motor PS
 }
 
-static void beforeInt(void){
+static void initInterrupt(void){
     // Interrupt setting
     INTCON = 0;                 // All clear
     RCONbits.IPEN = 0;
@@ -165,118 +160,6 @@ static void beforeInt(void){
     //INTCON2bits.RBIP = 1;
     INTCONbits.PEIE = 1;
     INTCONbits.GIE = 1;
-}
-
-static void mtrDriverActive(void){
-    // Motor Driver Active
-    PORTCbits.RC4 = 1;
-    __delay_us(40);
-}
-
-static void initMotorPhase(void){
-    // motor standby
-    PORTC &= STANDBY;
-
-    mtrPhase = EX1;
-    // To assign an initial value
-    PORTC |= mtrPhase;
-
-}
-
-static void motorChange(char dir, unsigned char phase){
-    // direction = CW
-    if(dir == CW){
-        switch(phase){
-            case EX1:
-                mtrPhase = EX2;
-                PORTC = mtrPhase;
-                break;
-
-            case EX2:
-                mtrPhase = EX3;
-                PORTC = mtrPhase;
-                break;
-
-            case EX3:
-                mtrPhase = EX4;
-                PORTC = mtrPhase;
-                break;
-
-            case EX4:
-                mtrPhase = EX5;
-                PORTC = mtrPhase;
-                break;
-
-            case EX5:
-                mtrPhase = EX6;
-                PORTC = mtrPhase;
-                break;
-
-            case EX6:
-                mtrPhase = EX7;
-                PORTC = mtrPhase;
-                break;
-
-            case EX7:
-                mtrPhase = EX8;
-                PORTC = mtrPhase;
-                break;
-
-            case EX8:
-                mtrPhase = EX1;
-                PORTC = mtrPhase;
-                break;
-
-            default:
-                break;
-        }
-    }
-    // direction = CCW
-    else{
-        switch(phase){
-            case EX1:
-                mtrPhase = EX8;
-                PORTC = mtrPhase;
-                break;
-
-            case EX2:
-                mtrPhase = EX1;
-                PORTC = mtrPhase;
-                break;
-
-            case EX3:
-                mtrPhase = EX2;
-                PORTC = mtrPhase;
-                break;
-
-            case EX4:
-                mtrPhase = EX3;
-                PORTC = mtrPhase;
-                break;
-
-            case EX5:
-                mtrPhase = EX4;
-                PORTC = mtrPhase;
-                break;
-
-            case EX6:
-                mtrPhase = EX5;
-                PORTC = mtrPhase;
-                break;
-
-            case EX7:
-                mtrPhase = EX6;
-                PORTC = mtrPhase;
-                break;
-
-            case EX8:
-                mtrPhase = EX7;
-                PORTC = mtrPhase;
-                break;
-
-            default:
-                break;
-        }
-    }
+    //INTCONbits.GIEH = 1;
 }
 
