@@ -136,7 +136,7 @@ static void initInterrupt(void){
     INTCON = 0;                 // All clear
     RCONbits.IPEN = 0;          // Disable interrupt priority
     INTCONbits.INT0IE = 1;      // Enables the INT0 external interrupt
-    INTCON2bits.INTEDG0 = 1;    // Interrupt on rising edge
+    INTCON2bits.INTEDG0 = 0;    // Interrupt on falling edge
     INTCONbits.GIE = 1;         // Enables all unmasked interrupts
 }
 
