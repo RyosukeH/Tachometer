@@ -29,38 +29,18 @@ static void initInterrupt(void);    // This Func called after everything is read
 void interrupt myInt(void){
 
     if(INTCONbits.INT0IF){
+        INTCONbits.GIE = 0;     // Disable all interrupt
         INTCONbits.INT0IE = 0;
-        INTCONbits.INT0IF = 0;  // interrupt flag down
-        //INTCONbits.PEIE = 0;
-        //INTCONbits.GIE = 0;     // Disable all interrupt
+        INTCONbits.INT0IF = 0;  // interrupt flag down     
 
         // test LED On Off
-        PORTAbits.RA0 = ~PORTAbits.RA0;
+        //PORTAbits.RA0 = ~PORTAbits.RA0;
+        motorChange(CW, mtrPhase);
 
-        INTCONbits.INT0IE = 1;
-        INTCONbits.PEIE = 1;
+        INTCONbits.INT0IE = 1;  // Enable INT0 interrupt
         INTCONbits.GIE = 1;     // Enable all interrupt
     }
 }
-
-void interrupt low_priority myIntLP(void){
-
-    if(INTCONbits.INT0IF){
-        INTCONbits.INT0IE = 0;
-        INTCONbits.INT0IF = 0;  // interrupt flag down
-        //INTCONbits.PEIE = 0;
-        //INTCONbits.GIE = 0;     // Disable all interrupt
-
-        // test LED On Off
-        PORTAbits.RA0 = ~PORTAbits.RA0;
-
-        INTCONbits.INT0IE = 1;
-        INTCONbits.PEIE = 1;
-        INTCONbits.GIE = 1;     // Enable all interrupt
-    }
-}
-
-
 
 int main(int argc, char** argv) {
 
@@ -74,22 +54,24 @@ int main(int argc, char** argv) {
     initMotorPhase();
     //mtrDriverActive();
 
-    // interrupt test
-    initInterrupt();
-    ei();
+
     PORTAbits.RA0 = 0;
     for(i=0; i<100; i++){
             __delay_ms(10);
     }
-    PORTAbits.RA0 = ~PORTAbits.RA0;
+    //PORTAbits.RA0 = ~PORTAbits.RA0;
 
+    // interrupt test
+    initInterrupt();
+    ei();
+    
     while(1){
-
+/*
         //PORTAbits.RA0 = 1;
         //PORTC = 0x0f;
 
         // motor function test
-        motorChange(CW, mtrPhase);
+        //motorChange(CW, mtrPhase);
         for(i=0; i<100; i++){
             __delay_ms(1);
         }
@@ -98,12 +80,12 @@ int main(int argc, char** argv) {
         //PORTC = 0x00;
 
         // motor function test
-        motorChange(CW, mtrPhase);
+        //motorChange(CW, mtrPhase);
         for(i=0; i<100; i++){
             __delay_ms(1);
         }
 
-        
+   */
     }
 
     return (EXIT_SUCCESS);
@@ -152,14 +134,9 @@ static void initPortReg(void){
 static void initInterrupt(void){
     // Interrupt setting
     INTCON = 0;                 // All clear
-    RCONbits.IPEN = 0;
-    INTCONbits.INT0IE = 1;
-    //INTCONbits.INT0IF = 0;
-    //INTCONbits.RBIE = 1;
+    RCONbits.IPEN = 0;          // Disable interrupt priority
+    INTCONbits.INT0IE = 1;      // Enables the INT0 external interrupt
     INTCON2bits.INTEDG0 = 1;    // Interrupt on rising edge
-    //INTCON2bits.RBIP = 1;
-    INTCONbits.PEIE = 1;
-    INTCONbits.GIE = 1;
-    //INTCONbits.GIEH = 1;
+    INTCONbits.GIE = 1;         // Enables all unmasked interrupts
 }
 
